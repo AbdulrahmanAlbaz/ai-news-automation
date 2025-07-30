@@ -1,0 +1,336 @@
+{
+  "name": "latest AI news",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "hour": 9
+            }
+          ]
+        },
+        "feedUrl": "https://thegradient.pub/rss/"
+      },
+      "type": "n8n-nodes-base.rssFeedReadTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        -96
+      ],
+      "id": "6928fb28-c87f-4a5b-ac1c-55d6ac924448",
+      "name": "the gradient feed"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "hour": 10
+            }
+          ]
+        },
+        "feedUrl": "https://openai.com/blog/rss.xml"
+      },
+      "type": "n8n-nodes-base.rssFeedReadTrigger",
+      "typeVersion": 1,
+      "position": [
+        224,
+        112
+      ],
+      "id": "72229a0d-1ed3-4991-af92-f92ae9c2a632",
+      "name": "open AI feed"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here is an article to evaluate, summarize, and translate:\n\n---\nTitle: {{ $json.title }}\nAuthor: {{ $json.creator }}\nSource: {{ $json.link }}\nContent: {{ $json.contentSnippet }}\n---\n\nPlease follow the instructions in your role to:\n1. Score the Content using the 6-point criteria (Breakthrough, Relevance, Novelty, Impact, Credibility, Clarity), each from 0–5.\n2. Calculate the total score.\n3. If the total score is 19 or higher:\n   - Generate a summary in English that is concise yet preserves all key technical details. The summary should reflect a deep understanding of the article’s concepts, especially breakthroughs, methods, model architectures, performance metrics, or use cases. Assume the reader is an AI professional who values both clarity and substance. The summary total charcaters have to be within the range of (1700-2500)\n\n   - Translate it to Egyptian Arabic dialect, preserving key AI terms in English.\n\n   - If the total score is below 19, return only the scoring section and a note saying the article is not significant enough for publishing.\n\n   - Create a well-structured and engaging LinkedIn-style post in the Egyptian Arabic dialect based on the Arabic translation. Use a natural and conversational tone that appeals to AI professionals and curious readers alike.\nThe post should follow this structure:\n1-Start with a short hook or surprising insight to grab attention.\n2-Then present the main technical points or argument clearly, with an educational and thoughtful tone.\n3-End with a reflection or a thought-provoking question to invite comments.\n\nFormatting Guidelines:\n\n1-Add relevant emojis where appropriate to increase engagement.\n2-Use bullet points or line breaks to improve readability.\n3-Make sure the total character count is between 1700 and 2500 characters.\n4-Avoid repetition, filler, or generic phrases.\nAt the end of the post, include the following line:\n\n📎 Source: {{ $json.title }} by {{ $json.creator }}  — {{ $json.link }}\n\nFinally, add 2–3 relevant  hashtags based on the topic (e.g., #AI, #AGI,).\n\n\n⚠️ Return valid plain JSON only — no markdown, no triple backticks, no comments. All strings must be escaped properly.\n",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are an expert AI research analyst and professional Arabic technical writer.\n\nYour task is to:\n1. Read and understand a given English AI-related article (e.g., from blogs, news, or research updates).\n2. Summarize it in a concise, engaging, and technically accurate way.\n3. Translate the summary to Egyptian Arabic dialect while keeping key technical AI terms (e.g., \"LLM\", \"Transformer\", \"fine-tuning\", \"GPT-4\") **in English**.\n4. Format the result as a short LinkedIn post that:\n   - Starts with a hook or insight.\n   - Highlights key points or implications of the article.\n   - Ends with a thought-provoking question or comment to invite engagement.\n   - Adds up to 4 relevant hashtags at the end (e.g., #AI, #MachineLearning).\n\nUse a professional but conversational tone. Prioritize clarity and value to Arabic-speaking AI enthusiasts and professionals.\nDo not hallucinate facts. If an article lacks enough detail, say so clearly.\n\nBefore generating the summary and translation, evaluate the input article using the following 6 criteria:\n\n1. Breakthrough (0–5): Does it present a major advancement?\n2. Relevance (0–5): How relevant is this news to current AI developments?\n3. Novelty (0–5): How original or new is the idea?\n4. Impact (0–5): Will it influence research, industry, or public perception?\n5. Credibility (0–5): Is the source reputable and trustworthy?\n6. Clarity (0–5): Is the article easy to understand and summarize?\n\nReturn a JSON object with the scores, and compute the **Total Score**.  \nOnly proceed to summarize and translate the article if the **Total Score is 15 or higher**.\n\nFormat your response like this:\n\n```json\n{\n  \"scores\": {\n    \"breakthrough\": 4,\n    \"relevance\": 5,\n    \"novelty\": 4,\n    \"impact\": 4,\n    \"credibility\": 5,\n    \"clarity\": 4\n  },\n  \"total_score\": 26,\n  \"summary\": \"...\",\n  \"translation\": \"...\",\n  \"linkedin_post\": \"...\"\n}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        576,
+        -16
+      ],
+      "id": "02d76178-9cf9-4380-ab0a-739247abf2f3",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "deepseek/deepseek-chat-v3-0324:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        512,
+        192
+      ],
+      "id": "e14a15fd-ddcb-441b-8b57-8766dc16e42d",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "182v1hKkG48RsfsT",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json[\"text\"];\n\n// Remove markdown formatting and excessive whitespace\nlet clean = raw\n  .replace(/^\\s*```json\\s*/i, \"\")   // remove opening ```json\n  .replace(/\\s*```$/, \"\")           // remove closing ```\n  .trim();\n\n// Fix dangerous control characters that crash JSON.parse\nclean = clean.replace(/[\\u0000-\\u001F]+/g, ''); // removes bad control chars like \\u000A etc.\n\ntry {\n  const parsed = JSON.parse(clean);\n  return parsed;\n} catch (err) {\n  return {\n    error: \"❌ Failed to parse JSON\",\n    message: err.message,\n    raw: clean.slice(0, 1000) // return preview of the cleaned JSON\n  };\n}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        928,
+        -16
+      ],
+      "id": "2c3fd324-5c33-4217-9577-21398c9408de",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "hour": 11
+            }
+          ]
+        },
+        "feedUrl": "https://www.technologyreview.com/feed/"
+      },
+      "type": "n8n-nodes-base.rssFeedReadTrigger",
+      "typeVersion": 1,
+      "position": [
+        208,
+        304
+      ],
+      "id": "18dd7f6f-9b73-4ab0-88a1-90587da1881e",
+      "name": "MIT Tech Review"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "115tpKc9moJ60GbzPE92JiPA1Zj3M_-oN3tvEBh7GJzE",
+          "mode": "list",
+          "cachedResultName": "AI news & articles ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/115tpKc9moJ60GbzPE92JiPA1Zj3M_-oN3tvEBh7GJzE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/115tpKc9moJ60GbzPE92JiPA1Zj3M_-oN3tvEBh7GJzE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Score": "={{ $json.total_score }}",
+            "Content": "={{ $json.linkedin_post }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Content",
+              "displayName": "Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1456,
+        -80
+      ],
+      "id": "22758a4c-d0df-4aaf-90f5-c9993a8f8672",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "4eGA8WAOrJskFXnZ",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a8512a3f-4d30-41f3-823e-eda631f8541f",
+              "leftValue": "={{ $json.total_score }}",
+              "rightValue": 19,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1136,
+        -16
+      ],
+      "id": "9aa262c0-c6c4-4ca5-bcc8-adecdba5f7a3",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        112
+      ],
+      "id": "c5bad058-199e-4fbf-a5a8-6c48af66e808",
+      "name": "No Operation, do nothing"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "the gradient feed": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "open AI feed": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MIT Tech Review": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a6babf89-965e-484a-a6eb-48c585b96ae2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e6731698ff788218fdd010c345207fc05e638fc1c9274c16de7f30c1de6a4a5b"
+  },
+  "id": "5pgHzdAYtgiZ4GAI",
+  "tags": []
+}

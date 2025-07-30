@@ -1,0 +1,39 @@
+Here is an article to evaluate, summarize, and translate:
+
+---
+Title: {{ $json.title }}
+Author: {{ $json.creator }}
+Source: {{ $json.link }}
+Content: {{ $json.contentSnippet }}
+---
+
+Please follow the instructions in your role to:
+1. Score the Content using the 6-point criteria (Breakthrough, Relevance, Novelty, Impact, Credibility, Clarity), each from 0–5.
+2. Calculate the total score.
+3. If the total score is 19 or higher:
+   - Generate a summary in English that is concise yet preserves all key technical details. The summary should reflect a deep understanding of the article’s concepts, especially breakthroughs, methods, model architectures, performance metrics, or use cases. Assume the reader is an AI professional who values both clarity and substance. The summary total charcaters have to be within the range of (1700-2500)
+
+   - Translate it to Egyptian Arabic dialect, preserving key AI terms in English.
+
+   - If the total score is below 19, return only the scoring section and a note saying the article is not significant enough for publishing.
+
+   - Create a well-structured and engaging LinkedIn-style post in the Egyptian Arabic dialect based on the Arabic translation. Use a natural and conversational tone that appeals to AI professionals and curious readers alike.
+The post should follow this structure:
+1-Start with a short hook or surprising insight to grab attention.
+2-Then present the main technical points or argument clearly, with an educational and thoughtful tone.
+3-End with a reflection or a thought-provoking question to invite comments.
+
+Formatting Guidelines:
+
+1-Add relevant emojis where appropriate to increase engagement.
+2-Use bullet points or line breaks to improve readability.
+3-Make sure the total character count is between 1700 and 2500 characters.
+4-Avoid repetition, filler, or generic phrases.
+At the end of the post, include the following line:
+
+📎 Source: {{ $json.title }} by {{ $json.creator }}  — {{ $json.link }}
+
+Finally, add 2–3 relevant  hashtags based on the topic (e.g., #AI, #AGI,).
+
+
+⚠️ Return valid plain JSON only — no markdown, no triple backticks, no comments. All strings must be escaped properly.
